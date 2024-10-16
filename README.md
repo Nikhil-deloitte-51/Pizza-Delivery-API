@@ -17,18 +17,30 @@ A simple FastAPI application for managing pizaa delivery using MySQL
         git clone <repository-url>
 
 2. Navigate to the project directory
-    bash:
+    ```bash:
         cd <repository-directory>
 
-3. Install dependencies:
+3. Install Poetry(if not already installed):
+   ```bash
+   curl -sSL https://install.python-poetry.org | python3 -
+   
+4. Install the project dependencies:
     Using poetry:
-        bash:
+        ```bash:
             poetry install
             poetry shell
 
-4. Run the Application:
+5. Run the Application:
+   ```bash
     cd app
     poetry run uvicorn main:app --reload
 
-5. Access the API:
+6. Access the API:
     Navigate to http://127.0.0.1:8000/docs
+
+# Examples
+You can interact with the API using tools like Postman or curl. Here are some example requests.
+
+# Get Root
+```bash
+curl -X GET http://127.0.0.1:8000/
