@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "my-new-project"
+version = "0.1.0"
+description = "A web application"
+authors = ["Nikhil Kumar <nkumar51@deloitte.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.115.0"
+uvicorn = "^0.31.1"
+sqlalchemy = "^2.0.35"
+pymysql = "^1.1.1"
+python-multipart = "^0.0.12"
+passlib = {extras = ["bycrpt"], version = "^1.7.4"}
+python-jose = "^3.3.0"
+pydantic = {extras = ["email"], version = "^2.9.2"}
+bcrypt = "^4.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
