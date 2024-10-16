@@ -25,10 +25,9 @@ A simple FastAPI application for managing pizaa delivery using MySQL
    curl -sSL https://install.python-poetry.org | python3 -
    
 4. Install the project dependencies:
-    Using poetry:
-        ```bash:
-            poetry install
-            poetry shell
+   ```bash
+     poetry install
+     poetry shell
 
 5. Run the Application:
    ```bash
