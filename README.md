@@ -2,7 +2,7 @@
 
 # Description
 
-A simple FastAPI application for managing pizaa delivery using MySQL
+A simple FastAPI application for managing Pizza delivery using MySQL
 
 # Requirements
 - Python 3.10

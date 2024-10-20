@@ -4,31 +4,16 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 
-from models import User
-from schemas import UserCreate, UserRespone, Token, TokenData
+from models.user import User
+from schemas.user import UserCreate, UserRespone, Token, TokenData
 from database import get_db
+from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
+from dependencies import create_access_token
 
 router = APIRouter()
 
 # OAuth2 configuration
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/user/login")
-SECRET_KEY = "e42b5e344b86122fa23469990d9dc73a445860b8fd13e1f3bff398990a58d635"
-ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-
-def create_access_token(data: dict, 
-                        expires_delta: timedelta = None
-                        ):
-    """Create a JWT token with an expiration time."""
-
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow()+ timedelta(minutes = 15)
-    to_encode.update({"exp":expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm = ALGORITHM)
-    return encoded_jwt
 
 # Create user
 @router.post("/users", 
@@ -94,40 +79,19 @@ def login(db: Session = Depends(get_db),
         "token_type": "bearer"
         }
 
-def get_current_user(db: Session = Depends(get_db), 
-                     token: str= Depends(oauth2_scheme)
-                     ):
-    """Get the current user's information using the provided JWT token."""
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail = "Could not validate credentials",
-        headers = {"www-authenticate": "Bearer"},
-    )
-    try:
-        # Decode the token and retrieve username 
-        payload = jwt.decode(token, SECRET_KEY, algorithms= [ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username = username)
-    except JWTError:
-        raise credentials_exception
-
-    user = db.query(User).filter(
-        User.username==token_data.username
-        ).first()
-    
-    if user is None:
-        raise credentials_exception
-
+@router.get("/{user_id}", response_model = UserRespone)
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code = 404, detail= "User not found")
     return user
 
-@router.get("/users/me",
-            response_model=UserRespone
-            )
-def read_users_me(
-    current_user: UserCreate = Depends(get_current_user)
-    ):
-    return current_user
+@router.delete("/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    db.delete(user)
+    db.commit()
+    return {"detail": "User deleted"}
 

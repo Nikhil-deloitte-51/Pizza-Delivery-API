@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
 from database import engine, Base
-from routers import cart, admin, customer, delivery, user
-from models import User, Pizza, Order, Delivery, Cart
+from routers import cart, delivery, user, orders, pizzas, payment
+
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -17,9 +17,10 @@ app = FastAPI(
 
 app.include_router(user.router, prefix="/user", tags = ["User"])
 app.include_router(cart.router, prefix="/cart", tags = ["Cart"])
-app.include_router(admin.router, prefix="/admin", tags = ["Admin"])
-app.include_router(customer.router, prefix="/customer", tags = ["Customer"])
+app.include_router(orders.router, prefix="/order", tags = ["Order"])
+app.include_router(pizzas.router, prefix="/pizza", tags = ["PIzza"])
 app.include_router(delivery.router, prefix="/delivery", tags = ["Delivery"])
+app.include_router(payment.router, prefix="/payment", tags = ["Payment"])
 
 @app.get("/")
 def get():

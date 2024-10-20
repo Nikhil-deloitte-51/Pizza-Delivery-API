@@ -2,39 +2,24 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from models import Order, Delivery
+from models.delivery import Delivery
+from models.user import User
+
+from schemas.delivery import DeliveryCreate, DeliveryRequest, DeliveryStatusUpdate
 from database import get_db
-import schemas, models
+
 from dependencies import role_required
-from enums import UserRole
-from routers.user import get_current_user
+from enums import UserRole, DeliveryStatus
+from dependencies import get_current_user
 
 router = APIRouter()
-
-# @router.post("/deliveries", response_model=schemas.Delivery, dependencies=[Depends(role_required(UserRole.delivery))])
-@router.post("/deliveries", 
-             response_model=schemas.Delivery, 
-             dependencies=[Depends(role_required(UserRole.delivery))]
-             )
-def create_delivery(delivery: schemas.DeliveryCreate, 
-                    current_user: models.User = Depends(get_current_user),
-                    db: Session = Depends(get_db)
-                    ):
-    """Create a new delivery record in the database."""
-
-    # Create a new Delivery instance using the provided schema data
-    db_delivery = models.Delivery(**delivery.dict())
-    db.add(db_delivery) 
-    db.commit() 
-    db.refresh(db_delivery) 
-    return db_delivery
 
 @router.patch("/deliveries/{delivery_id}/status",
               dependencies=[Depends(role_required(UserRole.delivery))]
               )
-def update_delivery_status(delivery_id: int, delivery_status: str, 
+def update_delivery_status(delivery_id: int, delivery_status: DeliveryStatus,
                            comment: str = None, 
-                           current_user: models.User = Depends(get_current_user),
+                           current_user: User = Depends(get_current_user),
                            db: Session = Depends(get_db)
                            ):
     """Update the status of an existing delivery record."""
@@ -58,12 +43,12 @@ def update_delivery_status(delivery_id: int, delivery_status: str,
         delivery.comment = comment
 
     # Set the start time when the delivery status changes to "in_progress"
-    if delivery_status == "in_progress" and not delivery.start_time:
-        delivery.start_time = datetime.utcnow()
+    if delivery_status == "Out for Delivery" and not delivery.start_time:
+        delivery.start_time = datetime.now().isoformat()
 
     # Set the end time when the delivery status changes to "delivered"
-    elif delivery_status == "delivered":
-        delivery.end_time = datetime.utcnow()
+    elif delivery_status == "Delivered":
+        delivery.end_time = datetime.now().isoformat()
 
     db.commit()         # Commit the changes to the database
     return {
@@ -72,3 +57,39 @@ def update_delivery_status(delivery_id: int, delivery_status: str,
         "start_time": delivery.start_time, 
         "end_time": delivery.end_time
         }
+
+
+@router.post("/deliveries"
+             )
+def create_delivery(delivery_request: DeliveryRequest, 
+                    db: Session = Depends(get_db)
+                    ):
+    """Create a new delivery record in the database."""
+    
+    existing_delivery = db.query(Delivery).filter(
+        Delivery.order_number == delivery_request.order_number
+        ).first()
+    
+    if existing_delivery:
+        db.close()
+        raise HTTPException(
+            status_code = 404,
+            detail = "Delivery order already exists"
+        )
+    
+    delivery = Delivery(
+        user_id = delivery_request.user_id,
+        order_number = delivery_request.order_number,
+        delivery_address = delivery_request.delivery_address,
+        delivery_status = "Pending"
+    )
+    db.add(delivery)
+    db.commit()
+    db.refresh(delivery)
+    db.close()
+
+    return {
+            "delivery_id": delivery.id,
+            "message": "Delivery order created"
+            }
+    

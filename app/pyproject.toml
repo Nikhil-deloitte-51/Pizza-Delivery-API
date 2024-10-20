@@ -16,6 +16,7 @@ passlib = {extras = ["bycrpt"], version = "^1.7.4"}
 python-jose = "^3.3.0"
 pydantic = {extras = ["email"], version = "^2.9.2"}
 bcrypt = "^4.2.0"
+requests = "^2.32.3"
 
 
 [build-system]
